@@ -11,12 +11,4 @@ public final class IntArrayArenaTemplate
         super(arena);
     }
 
-    @Override
-    protected List<Storage> priorityStorage(List<Storage> storages) {
-        if (storages.size() < 2) return storages;
-
-        List<Storage> sorted = new ArrayList<>(storages);
-        sorted.sort(Comparator.comparingLong(Storage::capacity).reversed());
-        return sorted;
-    }
 }

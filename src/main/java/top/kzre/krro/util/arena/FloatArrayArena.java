@@ -4,20 +4,44 @@ import java.nio.FloatBuffer;
 import java.util.List;
 
 /**
- * 单存储层 Float Arena——底层为 float 数组。
+ * Float 数组 Arena——单存储类型，支持动态扩容。
  *
- * <p>与 {@link AbstractArena} 的关系：本类限定 {@code S = FloatArrayStorage}——
- * 视图构造时直接使用具体存储类型——无需运行时 cast。
+ * <p><b>类型约束</b>：本 Arena 只接受 {@link FloatArrayStorage}——
+ * {@link #addStorage} 做运行时校验，拒绝其他类型。
  *
- * <p>视图是内部类——通过 {@code SingleFloatArrayArena.this} 回调
- * {@link AbstractArena#destroyView}——无需持有 arena 引用字段。
+ * <p><b>视图</b>：内部类——通过 {@code FloatArrayArena.this}
+ * 回调 {@link AbstractArena#destroyView}——无需持有 arena 引用字段。
  */
 public final class FloatArrayArena
-        extends AbstractArena<FloatArenaView, FloatArrayStorage> {
+        extends AbstractArena<FloatArenaView, FloatArrayStorage>
+        implements GrowableArena<FloatArenaView> {
 
     public FloatArrayArena(List<FloatArrayStorage> storages) {
         super(storages);
     }
+
+    // ═══════════════════════════════════════════════
+    // 扩容——类型校验
+    // ═══════════════════════════════════════════════
+
+    /**
+     * 添加存储层——必须是 {@link FloatArrayStorage}。
+     *
+     * @throws IllegalArgumentException 类型不符
+     */
+    @Override
+    public void addStorage(Storage storage) {
+        if (!(storage instanceof FloatArrayStorage)) {
+            throw new IllegalArgumentException(
+                    "FloatArrayArena only accepts FloatArrayStorage, got: "
+                            + (storage == null ? "null" : storage.getClass().getName()));
+        }
+        doAddStorage(storage);
+    }
+
+    // ═══════════════════════════════════════════════
+    // 视图工厂
+    // ═══════════════════════════════════════════════
 
     @Override
     protected AllocateResult<FloatArenaView> createView(
@@ -46,26 +70,13 @@ public final class FloatArrayArena
             this.count    = byteSize / Float.BYTES;
         }
 
-        // ═══════════════════════════════════════════
-        // 引用计数归零——归还段
-        // ═══════════════════════════════════════════
-
         @Override
         protected void onRelease() {
-            // 内部类——直接访问外层实例
             FloatArrayArena.this.destroyView(storage, offset, byteSize);
         }
 
-        // ═══════════════════════════════════════════
-        // 元数据
-        // ═══════════════════════════════════════════
-
         @Override public long offset() { return offset; }
         @Override public long count()  { return count; }
-
-        // ═══════════════════════════════════════════
-        // 数据访问
-        // ═══════════════════════════════════════════
 
         @Override
         public FloatBuffer floatBuffer() {
@@ -77,21 +88,14 @@ public final class FloatArrayArena
             return storage.getData();
         }
 
-        // ═══════════════════════════════════════════
-        // 拷贝
-        // ═══════════════════════════════════════════
-
         @Override
         public AllocateResult<FloatArenaView> copy() {
-            // 1. 在同一个 storage 分配新段
             AllocateResult<FloatArenaView> result =
                     FloatArrayArena.this.allocate(storage, byteSize);
             if (result.isFailure()) return result;
 
-            // 2. 拷贝字节
             FloatArenaView newView = result.getView();
             storage.copy(offset, newView.offset(), byteSize);
-
             return result;
         }
     }

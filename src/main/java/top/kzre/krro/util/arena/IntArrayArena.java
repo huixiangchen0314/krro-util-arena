@@ -3,12 +3,45 @@ package top.kzre.krro.util.arena;
 import java.nio.IntBuffer;
 import java.util.List;
 
+/**
+ * Int 数组 Arena——单存储类型，支持动态扩容。
+ *
+ * <p><b>类型约束</b>：本 Arena 只接受 {@link IntArrayStorage}——
+ * {@link #addStorage} 做运行时校验，拒绝其他类型。
+ *
+ * <p><b>视图</b>：内部类——通过 {@code IntArrayArena.this}
+ * 回调 {@link AbstractArena#destroyView}——无需持有 arena 引用字段。
+ */
 public final class IntArrayArena
-        extends AbstractArena<IntArenaView, IntArrayStorage> {
+        extends AbstractArena<IntArenaView, IntArrayStorage>
+        implements GrowableArena<IntArenaView> {
 
     public IntArrayArena(List<IntArrayStorage> storages) {
         super(storages);
     }
+
+    // ═══════════════════════════════════════════════
+    // 扩容——类型校验
+    // ═══════════════════════════════════════════════
+
+    /**
+     * 添加存储层——必须是 {@link IntArrayStorage}。
+     *
+     * @throws IllegalArgumentException 类型不符
+     */
+    @Override
+    public void addStorage(Storage storage) {
+        if (!(storage instanceof IntArrayStorage)) {
+            throw new IllegalArgumentException(
+                    "IntArrayArena only accepts IntArrayStorage, got: "
+                            + (storage == null ? "null" : storage.getClass().getName()));
+        }
+        doAddStorage(storage);
+    }
+
+    // ═══════════════════════════════════════════════
+    // 视图工厂
+    // ═══════════════════════════════════════════════
 
     @Override
     protected AllocateResult<IntArenaView> createView(
@@ -16,6 +49,10 @@ public final class IntArrayArena
         return AllocateResult.success(
                 new DefaultIntArenaView(storage, offset, byteSize));
     }
+
+    // ═══════════════════════════════════════════════
+    // 视图——内部类
+    // ═══════════════════════════════════════════════
 
     private final class DefaultIntArenaView
             extends AbstractArenaView<IntArenaView>
@@ -33,13 +70,25 @@ public final class IntArrayArena
             this.count    = byteSize / Integer.BYTES;
         }
 
+        // ═══════════════════════════════════════════
+        // 引用计数归零——归还段
+        // ═══════════════════════════════════════════
+
         @Override
         protected void onRelease() {
             IntArrayArena.this.destroyView(storage, offset, byteSize);
         }
 
+        // ═══════════════════════════════════════════
+        // 元数据
+        // ═══════════════════════════════════════════
+
         @Override public long offset() { return offset; }
         @Override public long count()  { return count; }
+
+        // ═══════════════════════════════════════════
+        // 数据访问
+        // ═══════════════════════════════════════════
 
         @Override
         public IntBuffer intBuffer() {
@@ -48,11 +97,12 @@ public final class IntArrayArena
 
         @Override
         public int[] getInts() {
-            IntBuffer ib = storage.intSlice(offset, count);
-            int[] result = new int[count];
-            ib.get(result);
-            return result;
+            return storage.getData();
         }
+
+        // ═══════════════════════════════════════════
+        // 拷贝
+        // ═══════════════════════════════════════════
 
         @Override
         public AllocateResult<IntArenaView> copy() {

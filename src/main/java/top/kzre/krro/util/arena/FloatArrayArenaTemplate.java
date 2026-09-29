@@ -21,18 +21,4 @@ public final class FloatArrayArenaTemplate
         super(arena);
     }
 
-    @Override
-    protected List<Storage> priorityStorage(List<Storage> storages) {
-        if (storages.size() < 2) {
-            return storages;
-        }
-
-        // 拷贝——不修改调用方传入的列表
-        List<Storage> sorted = new ArrayList<>(storages);
-
-        // 按容量降序——stable——同容量保持原顺序
-        sorted.sort(Comparator.comparingLong(Storage::capacity).reversed());
-
-        return sorted;
-    }
 }

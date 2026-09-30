@@ -59,9 +59,11 @@ public final class FloatArrayArena
             implements FloatArenaView {
 
         private final FloatArrayStorage storage;
-        private final long              offset;
-        private final int               byteSize;
-        private final int               count;
+
+        // 非 final——原地扩展时改
+        private final long offset;
+        private int  byteSize;
+        private int  count;
 
         DefaultFloatArenaView(FloatArrayStorage storage, long offset, int byteSize) {
             this.storage  = storage;
@@ -98,5 +100,27 @@ public final class FloatArrayArena
             storage.copy(offset, newView.offset(), byteSize);
             return result;
         }
+
+        // ═══════════════════════════════════════════════
+        // 方向性扩展——原地
+        // ═══════════════════════════════════════════════
+
+        @Override
+        public boolean tryExpandAfter(long extraBytes) {
+            if (extraBytes <= 0 || extraBytes > Integer.MAX_VALUE) return false;
+            if (refCount() != 1) return false;
+
+            int extra = (int) extraBytes;
+
+            if (!FloatArrayArena.this.tryReserveAfter(
+                    storage, offset, byteSize, extra)) {
+                return false;
+            }
+
+            this.byteSize += extra;
+            this.count    += extra / Float.BYTES;
+            return true;
+        }
+
     }
 }

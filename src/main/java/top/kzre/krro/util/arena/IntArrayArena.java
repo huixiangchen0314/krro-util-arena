@@ -59,9 +59,10 @@ public final class IntArrayArena
             implements IntArenaView {
 
         private final IntArrayStorage storage;
-        private final long            offset;
-        private final int             byteSize;
-        private final int             count;
+
+        private final long offset;
+        private int  byteSize;
+        private int  count;
 
         DefaultIntArenaView(IntArrayStorage storage, long offset, int byteSize) {
             this.storage  = storage;
@@ -70,25 +71,13 @@ public final class IntArrayArena
             this.count    = byteSize / Integer.BYTES;
         }
 
-        // ═══════════════════════════════════════════
-        // 引用计数归零——归还段
-        // ═══════════════════════════════════════════
-
         @Override
         protected void onRelease() {
             IntArrayArena.this.destroyView(storage, offset, byteSize);
         }
 
-        // ═══════════════════════════════════════════
-        // 元数据
-        // ═══════════════════════════════════════════
-
         @Override public long offset() { return offset; }
         @Override public long count()  { return count; }
-
-        // ═══════════════════════════════════════════
-        // 数据访问
-        // ═══════════════════════════════════════════
 
         @Override
         public IntBuffer intBuffer() {
@@ -100,10 +89,6 @@ public final class IntArrayArena
             return storage.getData();
         }
 
-        // ═══════════════════════════════════════════
-        // 拷贝
-        // ═══════════════════════════════════════════
-
         @Override
         public AllocateResult<IntArenaView> copy() {
             AllocateResult<IntArenaView> result =
@@ -114,5 +99,24 @@ public final class IntArrayArena
             storage.copy(offset, newView.offset(), byteSize);
             return result;
         }
+
+        @Override
+        public boolean tryExpandAfter(long extraBytes) {
+            if (extraBytes <= 0 || extraBytes > Integer.MAX_VALUE) return false;
+            if (refCount() != 1) return false;
+
+            int extra = (int) extraBytes;
+
+            if (!IntArrayArena.this.tryReserveAfter(
+                    storage, offset, byteSize, extra)) {
+                return false;
+            }
+
+            this.byteSize += extra;
+            this.count    += extra / Integer.BYTES;
+            return true;
+        }
+
+
     }
 }

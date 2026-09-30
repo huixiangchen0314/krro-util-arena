@@ -181,6 +181,94 @@ public final class FreeList {
 
     public void clear() { count = 0; }
 
+    // ═══════════════════════════════════════════════
+    // 新增——按位置精确分配
+    // ═══════════════════════════════════════════════
+
+    /**
+     * 尝试在精确位置 [offset, offset + size) 分配。
+     *
+     * <p>该区间必须完全被一个空闲段覆盖——否则失败。
+     *
+     * <p>成功时——从空闲段中切出该区间——不变量保持。
+     *
+     * @return true——切出成功；false——区间不空闲
+     */
+    public boolean tryAllocAt(long offset, long size) {
+        if (size <= 0) return false;
+
+        // 二分查找——找到 ≤ offset 的最大空闲段
+        int i = findSegmentIndex(offset);
+        if (i < 0) return false;
+
+        long segStart = offsets[i];
+        long segSize  = sizes[i];
+        long segEnd   = segStart + segSize;
+
+        // 目标区间必须完全落在该空闲段内
+        if (offset < segStart)              return false;
+        if (offset + size > segEnd)         return false;
+
+        // 精确命中——切成两段 / 移除
+        long leftSize  = offset - segStart;
+        long rightSize = segEnd - (offset + size);
+
+        if (leftSize == 0 && rightSize == 0) {
+            // 完全命中——移除
+            removeAt(i);
+        } else if (leftSize == 0) {
+            // 左对齐——右段保留
+            offsets[i] = offset + size;
+            sizes[i]   = rightSize;
+        } else if (rightSize == 0) {
+            // 右对齐——左段保留
+            sizes[i] = leftSize;
+        } else {
+            // 中间——切成左右两段
+            offsets[i] = segStart;
+            sizes[i]   = leftSize;
+            insertAt(i + 1, offset + size, rightSize);
+        }
+
+        return true;
+    }
+
+    /**
+     * 检查 [offset, offset + size) 是否完全空闲。
+     */
+    public boolean isFree(long offset, long size) {
+        if (size <= 0) return false;
+
+        int i = findSegmentIndex(offset);
+        if (i < 0) return false;
+
+        long segStart = offsets[i];
+        long segEnd   = segStart + sizes[i];
+
+        return offset >= segStart && offset + size <= segEnd;
+    }
+
+    /**
+     * 二分查找——返回 ≤ offset 的最大空闲段索引。
+     * 无匹配返回 -1。
+     */
+    private int findSegmentIndex(long offset) {
+        int lo = 0;
+        int hi = count - 1;
+        int result = -1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            if (offsets[mid] <= offset) {
+                result = mid;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return result;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("FreeList[");

@@ -102,6 +102,29 @@ public abstract class AbstractArena<V extends ArenaView<V>, S extends Storage>
         if (fl != null) fl.free(offset, byteSize);
     }
 
+    // ═══════════════════════════════════════════════
+    // 新增——方向性扩展
+    // ═══════════════════════════════════════════════
+
+    /**
+     * 预留 [offset + byteSize, offset + byteSize + extraBytes) 的空间。
+     *
+     * <p><b>前提</b>：调用方保证独占。
+     *
+     * <p><b>成功</b>：从 FreeList 切出 extraBytes——返回 true。
+     *
+     * <p><b>失败</b>：空间不足 / 不空闲——返回 false——FreeList 不变。
+     */
+    protected boolean tryReserveAfter(
+            Storage storage, long offset, int byteSize, int extraBytes) {
+        if (extraBytes <= 0) return false;
+        FreeList fl = freeLists.get(storage);
+        if (fl == null) return false;
+        return fl.tryAllocAt(offset + byteSize, extraBytes);
+    }
+
+
+
     @Override
     public void close() {
         Exception first = null;

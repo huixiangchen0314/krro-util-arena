@@ -26,13 +26,13 @@ import java.util.function.Supplier;
  * <p><b>扩容决策在调用方</b>：{@code storageSupplier} 决定新 storage
  * 的大小 / 类型。模板不猜测——不自作主张。
  *
- * <p><b>线程契约</b>：非线程安全——继承自 {@link AbstractArenaTemplate}。
+ * <p><b>线程契约</b>：非线程安全——继承自 {@link ArenaTemplate}。
  */
 public class AutoGrowArenaTemplate<
         T extends GrowableArena<V>,
         V extends ArenaView<V>,
         S extends Storage>
-        extends AbstractArenaTemplate<T, V> {
+        extends ArenaTemplate<T, V> {
 
     private final Supplier<S> storageSupplier;
 

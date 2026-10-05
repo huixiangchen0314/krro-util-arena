@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public abstract class AbstractArenaTemplate<
+public class ArenaTemplate<
         T extends Arena<V>,
         V extends ArenaView<V> > {
     private final T arena;
 
-    public AbstractArenaTemplate(T arena) {
+    public ArenaTemplate(T arena) {
         this.arena = arena;
     }
     protected T getArena(){

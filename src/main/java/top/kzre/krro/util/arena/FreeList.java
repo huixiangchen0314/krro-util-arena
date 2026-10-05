@@ -1,4 +1,4 @@
-package top.kzre.krro.util.arena.internal;
+package top.kzre.krro.util.arena;
 
 /**
  * 空闲段列表——按 offset 升序维护可用内存段。

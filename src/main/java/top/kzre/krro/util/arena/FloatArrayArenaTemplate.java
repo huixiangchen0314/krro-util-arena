@@ -1,9 +1,5 @@
 package top.kzre.krro.util.arena;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-
 /**
  * Float 数组 Arena 模板——多存储层的路由策略。
  *
@@ -15,7 +11,7 @@ import java.util.List;
  * 按使用频率 / 按 NUMA 亲和）。
  */
 public final class FloatArrayArenaTemplate
-        extends AbstractArenaTemplate<FloatArrayArena, FloatArenaView> {
+        extends ArenaTemplate<FloatArrayArena, FloatArenaView> {
 
     public FloatArrayArenaTemplate(FloatArrayArena arena) {
         super(arena);

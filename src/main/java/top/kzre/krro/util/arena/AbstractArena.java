@@ -1,6 +1,6 @@
 package top.kzre.krro.util.arena;
 
-import top.kzre.krro.util.arena.internal.FreeList;
+import top.kzre.krro.util.arena.FreeList;
 
 import java.util.*;
 

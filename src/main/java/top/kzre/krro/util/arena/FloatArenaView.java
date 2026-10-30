@@ -63,6 +63,23 @@ public interface FloatArenaView extends ArenaView<FloatArenaView> {
     long count();
 
     /**
+     * float 元素偏移——{@link #offset()} 除以 {@code Float.BYTES}。
+     *
+     * <p>用于按元素索引访问底层 {@code float[]}：
+     * <pre>
+     *   float[] storage = view.getFloats();      // 整个 arena 的 float[]
+     *   int base = (int) view.floatOffset();     // 当前视图的起始元素
+     *   float v = storage[base + i];
+     * </pre>
+     *
+     * <p>{@code offset()} 是字节偏移，直接加到 {@code float[]} 索引上
+     * 会读到错误位置——必须先用本方法转成元素偏移。
+     */
+    default long floatOffset() {
+        return offset() / Float.BYTES;
+    }
+
+    /**
      * 获取本视图的零拷贝切片——按 float 解释。
      *
      * <p>无论数据在堆内 / 堆外 / mapped——都返回可读写的

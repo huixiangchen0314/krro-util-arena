@@ -13,4 +13,10 @@ public final class AutoGrowFloatArrayArenaTemplate
             Supplier<FloatArrayStorage> storageSupplier) {
         super(arena, storageSupplier);
     }
+
+    public static AutoGrowFloatArrayArenaTemplate fixedSize(FloatArrayArena arena, int size){
+        return new AutoGrowFloatArrayArenaTemplate(arena,
+                ()->new FloatArrayStorage(new float[size]));
+    }
+
 }

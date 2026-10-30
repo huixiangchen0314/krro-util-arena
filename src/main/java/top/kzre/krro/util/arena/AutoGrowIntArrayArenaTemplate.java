@@ -10,4 +10,10 @@ public final class AutoGrowIntArrayArenaTemplate
             Supplier<IntArrayStorage> storageSupplier) {
         super(arena, storageSupplier);
     }
+
+    public static AutoGrowIntArrayArenaTemplate fixedSize(IntArrayArena arena, int size){
+        return new AutoGrowIntArrayArenaTemplate(arena,
+                ()->new IntArrayStorage(new int[size]));
+    }
+
 }

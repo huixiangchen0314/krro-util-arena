@@ -16,5 +16,5 @@ public interface FloatStorage extends Storage {
      * @param byteOffset 字节偏移
      * @param count      float 元素数
      */
-    FloatBuffer floatSlice(long byteOffset, int count);
+    FloatBuffer floatSlice(long byteOffset, long count);
 }

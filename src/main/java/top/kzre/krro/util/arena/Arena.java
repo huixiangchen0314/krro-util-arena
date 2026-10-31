@@ -10,7 +10,7 @@ public interface Arena<V extends ArenaView<V> > extends AutoCloseable {
     /**
      * 尝试在 storage 分配指定大小的空间
      * */
-    AllocateResult<V> allocate(Storage storage, int byteSize);
+    AllocateResult<V> allocate(Storage storage, long byteSize);
 
     /**
      * 当前空闲字节数——所有 storage 的 FreeList 之和。

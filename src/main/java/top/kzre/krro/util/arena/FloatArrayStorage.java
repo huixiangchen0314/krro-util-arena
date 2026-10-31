@@ -25,17 +25,18 @@ public final class FloatArrayStorage implements FloatStorage {
     @Override
     public void copy(long srcByteOffset, long dstByteOffset, long byteSize) {
         if (data == null) throw new IllegalStateException("closed");
-        int srcIdx = (int) (srcByteOffset / Float.BYTES);
-        int dstIdx = (int) (dstByteOffset / Float.BYTES);
-        int count  = (int) (byteSize      / Float.BYTES);
+        int srcIdx = Math.toIntExact((srcByteOffset / Float.BYTES));
+        int dstIdx = Math.toIntExact((dstByteOffset / Float.BYTES));
+        int count  = Math.toIntExact((byteSize / Float.BYTES));
         System.arraycopy(data, srcIdx, data, dstIdx, count);
     }
 
     @Override
-    public FloatBuffer floatSlice(long byteOffset, int count) {
+    public FloatBuffer floatSlice(long byteOffset, long count) {
         if (data == null) throw new IllegalStateException("closed");
-        int idx = (int) (byteOffset / Float.BYTES);
-        return FloatBuffer.wrap(data, idx, count);
+        int idx = Math.toIntExact((byteOffset / Float.BYTES));
+        // 截断，想更多精度支持，换存储
+        return FloatBuffer.wrap(data, idx, Math.toIntExact(count));
     }
 
     @Override

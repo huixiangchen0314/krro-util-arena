@@ -67,7 +67,7 @@ public abstract class AbstractArena<V extends ArenaView<V>, S extends Storage>
     }
 
     @Override
-    public AllocateResult<V> allocate(Storage storage, int byteSize) {
+    public AllocateResult<V> allocate(Storage storage, long byteSize) {
         FreeList fl = freeLists.get(storage);
         if (fl == null) return AllocateResult.unknownFailed();
 
@@ -94,10 +94,10 @@ public abstract class AbstractArena<V extends ArenaView<V>, S extends Storage>
     }
 
     /** 子类构造具体视图——收 S 类型。 */
-    protected abstract AllocateResult<V> createView(S storage, long offset, int byteSize);
+    protected abstract AllocateResult<V> createView(S storage, long offset, long byteSize);
 
     /** 归还段——视图释放时调用。 */
-    protected void destroyView(Storage storage, long offset, int byteSize) {
+    protected void destroyView(Storage storage, long offset, long byteSize) {
         FreeList fl = freeLists.get(storage);
         if (fl != null) fl.free(offset, byteSize);
     }
@@ -116,7 +116,7 @@ public abstract class AbstractArena<V extends ArenaView<V>, S extends Storage>
      * <p><b>失败</b>：空间不足 / 不空闲——返回 false——FreeList 不变。
      */
     protected boolean tryReserveAfter(
-            Storage storage, long offset, int byteSize, int extraBytes) {
+            Storage storage, long offset, long byteSize, long extraBytes) {
         if (extraBytes <= 0) return false;
         FreeList fl = freeLists.get(storage);
         if (fl == null) return false;

@@ -19,7 +19,7 @@ public class ArenaTemplate<
     /**
      * 算法核心入口。
      */
-    public AllocateResult<V> allocate(int byteSize) {
+    public AllocateResult<V> allocate(long byteSize) {
         for (Storage storage : priorityStorage(arena.getStorages())) {
             AllocateResult<V> result = arena.allocate(storage, byteSize);
             if (result.isSuccess()) {

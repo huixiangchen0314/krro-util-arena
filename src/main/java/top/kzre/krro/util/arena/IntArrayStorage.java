@@ -20,17 +20,17 @@ public final class IntArrayStorage implements IntStorage {
     @Override
     public void copy(long srcByteOffset, long dstByteOffset, long byteSize) {
         if (data == null) throw new IllegalStateException("closed");
-        int srcIdx = (int) (srcByteOffset / Integer.BYTES);
-        int dstIdx = (int) (dstByteOffset / Integer.BYTES);
-        int count  = (int) (byteSize      / Integer.BYTES);
+        int srcIdx = Math.toIntExact((srcByteOffset / Integer.BYTES));
+        int dstIdx = Math.toIntExact((dstByteOffset / Integer.BYTES));
+        int count  = Math.toIntExact((byteSize / Integer.BYTES));
         System.arraycopy(data, srcIdx, data, dstIdx, count);
     }
 
     @Override
-    public IntBuffer intSlice(long byteOffset, int count) {
+    public IntBuffer intSlice(long byteOffset, long count) {
         if (data == null) throw new IllegalStateException("closed");
-        int idx = (int) (byteOffset / Integer.BYTES);
-        return IntBuffer.wrap(data, idx, count);
+        int idx = Math.toIntExact((byteOffset / Integer.BYTES));
+        return IntBuffer.wrap(data, idx, Math.toIntExact(count));
     }
 
     @Override

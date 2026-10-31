@@ -54,7 +54,7 @@ public class AutoGrowArenaTemplate<
     // ═══════════════════════════════════════════════
 
     @Override
-    public AllocateResult<V> allocate(int byteSize) {
+    public AllocateResult<V> allocate(long byteSize) {
         // 1. 常规分配
         AllocateResult<V> result = super.allocate(byteSize);
         if (result.isSuccess()) return result;

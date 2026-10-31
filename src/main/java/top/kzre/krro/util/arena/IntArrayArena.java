@@ -45,7 +45,7 @@ public final class IntArrayArena
 
     @Override
     protected AllocateResult<IntArenaView> createView(
-            IntArrayStorage storage, long offset, int byteSize) {
+            IntArrayStorage storage, long offset, long byteSize) {
         return AllocateResult.success(
                 new DefaultIntArenaView(storage, offset, byteSize));
     }
@@ -61,10 +61,11 @@ public final class IntArrayArena
         private final IntArrayStorage storage;
 
         private final long offset;
-        private int  byteSize;
-        private int  count;
+        private long  byteSize;
+        // 容量截断在 Storage 做
+        private long  count;
 
-        DefaultIntArenaView(IntArrayStorage storage, long offset, int byteSize) {
+        DefaultIntArenaView(IntArrayStorage storage, long offset, long byteSize) {
             this.storage  = storage;
             this.offset   = offset;
             this.byteSize = byteSize;

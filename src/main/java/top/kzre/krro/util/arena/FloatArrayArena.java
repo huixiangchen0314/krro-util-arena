@@ -45,7 +45,7 @@ public final class FloatArrayArena
 
     @Override
     protected AllocateResult<FloatArenaView> createView(
-            FloatArrayStorage storage, long offset, int byteSize) {
+            FloatArrayStorage storage, long offset, long byteSize) {
         return AllocateResult.success(
                 new DefaultFloatArenaView(storage, offset, byteSize));
     }
@@ -62,10 +62,10 @@ public final class FloatArrayArena
 
         // 非 final——原地扩展时改
         private final long offset;
-        private int  byteSize;
-        private int  count;
+        private long  byteSize;
+        private long  count;
 
-        DefaultFloatArenaView(FloatArrayStorage storage, long offset, int byteSize) {
+        DefaultFloatArenaView(FloatArrayStorage storage, long offset, long byteSize) {
             this.storage  = storage;
             this.offset   = offset;
             this.byteSize = byteSize;
@@ -107,18 +107,17 @@ public final class FloatArrayArena
 
         @Override
         public boolean tryExpandAfter(long extraBytes) {
-            if (extraBytes <= 0 || extraBytes > Integer.MAX_VALUE) return false;
+            if (extraBytes <= 0) return false;
             if (refCount() != 1) return false;
 
-            int extra = (int) extraBytes;
 
             if (!FloatArrayArena.this.tryReserveAfter(
-                    storage, offset, byteSize, extra)) {
+                    storage, offset, byteSize, extraBytes)) {
                 return false;
             }
 
-            this.byteSize += extra;
-            this.count    += extra / Float.BYTES;
+            this.byteSize += extraBytes;
+            this.count    += extraBytes / Float.BYTES;
             return true;
         }
 

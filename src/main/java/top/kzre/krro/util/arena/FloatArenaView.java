@@ -10,10 +10,10 @@ import java.nio.FloatBuffer;
  *
  * <p><b>数据访问</b>：两条路径——
  * <ul>
- *   <li>{@link #floatBuffer()}——零拷贝切片——任何存储层（堆内 /
+ *   <li>{@link BufferSession}——零拷贝切片——任何存储层（堆内 /
  *       堆外 / mapped）都直接支持。适合批量读写、GPU 上传、
  *       传递给底层库。</li>
- *   <li>{@link #getFloats()}——请求一份堆内的 {@code float[]}——
+ *   <li>{@link ArraySession}——请求一份堆内的 {@code float[]}——
  *       数据不在堆内时先提升。返回的数组可能直接指向存储层
  *       （堆内情况）——调用方不得释放、不得改变长度。</li>
  * </ul>
@@ -31,63 +31,70 @@ import java.nio.FloatBuffer;
 public interface FloatArenaView extends ArenaView<FloatArenaView> {
 
     /**
-     * 获取本视图对应的堆内 {@code float[]}。
-     *
-     * <p>数据不在堆内时——先提升到堆内——再返回。
-     *
-     * <p>返回的数组长度等于 {@link #count()}——索引 {@code 0}
-     * 对应 {@link #offset()} 起始的 float。
-     *
-     * <p>调用方不得持有该数组跨越 {@link #release()}——不得修改
-     * 其长度。内容可写——写入直接反映到存储层。
-     *
-     * @return 堆内 float 数组
-     * @throws ArenaAllocationException 提升失败——堆满且无法换出
+     * 开启使用会话，使用时候不会被换页，安全。
+     * 如果数据是在非堆内存的话，会被自动提升为堆内存
      */
-    float[] getFloats();
+    ArraySession array();
 
     /**
-     * 本视图在存储层中的起始字节偏移。
-     *
-     * <p>存储层内的物理位置——不参与业务逻辑。同一视图的
-     * offset 在 COW / pack 后可能改变——视图对象不变。
+     * 开启会话. 返回Buffer，这个抽象允许非堆抽象
      */
-    long offset();
+    BufferSession buffer();
 
-    /**
-     * 本视图包含的 float 元素数量。
-     *
-     * <p>等于 {@link #floatBuffer()} 返回缓冲区的容量、
-     * {@link #getFloats()} 返回数组的长度。
-     */
-    long count();
 
-    /**
-     * float 元素偏移——{@link #offset()} 除以 {@code Float.BYTES}。
-     *
-     * <p>用于按元素索引访问底层 {@code float[]}：
-     * <pre>
-     *   float[] storage = view.getFloats();      // 整个 arena 的 float[]
-     *   int base = (int) view.floatOffset();     // 当前视图的起始元素
-     *   float v = storage[base + i];
-     * </pre>
-     *
-     * <p>{@code offset()} 是字节偏移，直接加到 {@code float[]} 索引上
-     * 会读到错误位置——必须先用本方法转成元素偏移。
-     */
-    default long floatOffset() {
-        return offset() / Float.BYTES;
+    interface ArraySession extends AutoCloseable {
+        /**
+         * 获取本视图对应的堆内 {@code float[]}。
+         *
+         * <p>数据不在堆内时——先提升到堆内——再返回。
+         *
+         * <p>返回的数组长度等于 {@link #count()}——索引 {@code 0}
+         * 对应 {@link #byteOffset()} 起始的 float。
+         *
+         * <p>调用方不得持有该数组跨越 {@link #release()}——不得修改
+         * 其长度。内容可写——写入直接反映到存储层。
+         *
+         * @return 堆内 float 数组
+         * @throws ArenaAllocationException 提升失败——堆满且无法换出
+         */
+        float[] getFloats();
+
+        /**
+         * 本视图在存储层中的起始字节偏移。
+         *
+         * <p>存储层内的物理位置——不参与业务逻辑。同一视图的
+         * offset 在 COW / pack 后可能改变——视图对象不变。
+         */
+        long byteOffset();
+
+        /**
+         * 浮点偏移
+         */
+        int offset();
+
+        /**
+         * 本视图包含的 float 元素数量。
+         *
+         * <p>等于 {@link FloatArenaView#buffer()} 返回缓冲区的容量、
+         * {@link #getFloats()} 返回数组的长度。
+         */
+        int count();
+
     }
 
-    /**
-     * 获取本视图的零拷贝切片——按 float 解释。
-     *
-     * <p>无论数据在堆内 / 堆外 / mapped——都返回可读写的
-     * {@link FloatBuffer}。切片的 position 为 0、limit / capacity
-     * 为 {@link #count()}。
-     *
-     * <p>切片共享底层内存——修改直接反映到存储层。切片本身
-     * 生命周期独立于视图——但底层内存的有效性由视图引用计数保证。
-     */
-    FloatBuffer floatBuffer();
+    interface BufferSession extends AutoCloseable {
+        /**
+         * 获取本视图的零拷贝切片——按 float 解释。
+         *
+         * <p>无论数据在堆内 / 堆外 / mapped——都返回可读写的
+         * {@link FloatBuffer}。切片的 position 为 0、limit / capacity
+         * 为 {@link ArraySession#count()}。
+         *
+         * <p>切片共享底层内存——修改直接反映到存储层。切片本身
+         * 生命周期独立于视图——但底层内存的有效性由视图引用计数保证。
+         */
+        FloatBuffer floatBuffer();
+    }
+
+
 }
